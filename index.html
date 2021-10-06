@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+
+<html>
+<head><title>{{.Title}}</title></head>
+<body>
+    <h1>{{.Title}}</h1>
+    <script type="text/javascript">
+        var sock = null;
+        var wsuri = "ws://127.0.0.1:3000/ws";
+        window.onload = function() {
+
+            sock = new WebSocket(wsuri);
+            // sock.onopen = function() {
+            //     console.log("connected to " + wsuri);
+            // }
+
+            // sock.onclose = function(e) {
+            //     console.log("connection closed (" + e.code + ")");
+            // }
+
+            sock.onmessage = function(e) {
+                console.log("message received: " + e);
+                var reader = new FileReader();
+                // reader.onload = function () {
+                //     callback(reader.result);
+                // // };
+                // // let blob = new Blob(arr, {type: 'text/html'});
+                console.log(e);
+                // document.getElementById("demo").innerHTML=e.data
+                document.getElementById("img").src ='data:image/jpeg;base64,'+e.data;
+
+                }
+        };
+        function send() {
+            var msg = document.getElementById('message').value;
+            sock.send(msg);
+        };
+    </script>
+<form>
+    <p>
+        Message: <input id="message" type="text" value="Hello, world!">
+    </p>
+    <p id="demo"></p>
+    <img id="img">
+</form>
+<button onclick="send();">Send Message</button>
+</body>
+</html>
