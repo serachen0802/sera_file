@@ -53,8 +53,8 @@ func takePicture(open chan int, take chan []byte) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		open <- 0
 		fmt.Println("拍照")
-		// img := <-take
-		// rw.Write(img)
+		img := <-take
+		rw.Write(img)
 	}
 }
 
@@ -83,12 +83,10 @@ func main() {
 		}
 
 		defer webcam.Close()
-
 		img := gocv.NewMat()
 		defer img.Close()
 
 		// webcam.Read(&img)
-		// 	giveyou <- img
 
 		if ok := webcam.Read(&img); !ok {
 			fmt.Printf("cannot read device %v\n", deviceID)
@@ -98,6 +96,8 @@ func main() {
 			fmt.Printf("no image on device %v\n", deviceID)
 			return
 		}
-		gocv.IMWrite("test", img)
+		fileName := "test.jpg"
+		gocv.IMWrite(fileName, img)
+		take <- img
 	}
 }
