@@ -32,14 +32,30 @@
             var msg = document.getElementById('message').value;
             sock.send(msg);
         };
+
+        function takePicture(){
+            console.log('拍照')
+            fetch('http://127.0.0.1:3000/takePicture')
+            // .then(function(response) {
+            //     const result= response.json()
+            //     console.log(result)
+            .then(res => {
+                // return res.json();   // 使用 text() 可以得到純文字 String
+            }).then(result => {
+                console.log(result);
+            })
+        }
     </script>
 <form>
     <p>
-        Message: <input id="message" type="text" value="Hello, world!">
+        Message: <input id="message" type="text" value="Hello!">
     </p>
     <p id="demo"></p>
-    <img id="img">
+
 </form>
 <button onclick="send();">Send Message</button>
+<button onclick="takePicture();">拍照</button><br>
+
+<img id="img">
 </body>
 </html>

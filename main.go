@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"gocv.io/x/gocv"
 )
 
 var upgrader = &websocket.Upgrader{}
@@ -44,6 +45,19 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type data struct {
+	Name string `json:"name"`
+}
+
+func takePicture(open chan int, take chan []byte) http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		open <- 0
+		fmt.Println("拍照")
+		// img := <-take
+		// rw.Write(img)
+	}
+}
+
 type IndexData struct {
 	Title string
 }
@@ -51,5 +65,39 @@ type IndexData struct {
 func main() {
 	http.Handle("/", http.FileServer(http.Dir(".")))
 	http.HandleFunc("/ws", wsHandler)
-	http.ListenAndServe(":3000", nil)
+
+	open := make(chan int)
+	take := make(chan []byte)
+
+	go func() {
+		http.HandleFunc("/takePicture", takePicture(open, take))
+		http.ListenAndServe(":3000", nil) // stuck
+	}()
+
+	for {
+		deviceID := <-open
+		fmt.Println(deviceID)
+		webcam, err := gocv.OpenVideoCapture(deviceID)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		defer webcam.Close()
+
+		img := gocv.NewMat()
+		defer img.Close()
+
+		// webcam.Read(&img)
+		// 	giveyou <- img
+
+		if ok := webcam.Read(&img); !ok {
+			fmt.Printf("cannot read device %v\n", deviceID)
+			return
+		}
+		if img.Empty() {
+			fmt.Printf("no image on device %v\n", deviceID)
+			return
+		}
+		gocv.IMWrite("test", img)
+	}
 }
