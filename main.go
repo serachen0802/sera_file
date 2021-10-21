@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/websocket"
 	"gocv.io/x/gocv"
@@ -46,7 +48,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type data struct {
-	Name string `json:"name"`
+	Image []byte `json:"image"`
 }
 
 func takePicture(open chan int, take chan []byte) http.HandlerFunc {
@@ -54,7 +56,10 @@ func takePicture(open chan int, take chan []byte) http.HandlerFunc {
 		open <- 0
 		fmt.Println("拍照")
 		img := <-take
-		rw.Write(img)
+
+		jsonImg, _ := json.Marshal(img)
+		rw.Write(jsonImg)
+
 	}
 }
 
@@ -75,29 +80,32 @@ func main() {
 	}()
 
 	for {
-		deviceID := <-open
-		fmt.Println(deviceID)
-		webcam, err := gocv.OpenVideoCapture(deviceID)
-		if err != nil {
-			fmt.Println(err)
-		}
+		func() {
+			deviceID := <-open
+			webcam, err := gocv.OpenVideoCapture(deviceID)
+			if err != nil {
+				fmt.Println(err)
+			}
 
-		defer webcam.Close()
-		img := gocv.NewMat()
-		defer img.Close()
+			defer webcam.Close()
+			img := gocv.NewMat()
+			defer img.Close()
 
-		// webcam.Read(&img)
+			// webcam.Read(&img)
 
-		if ok := webcam.Read(&img); !ok {
-			fmt.Printf("cannot read device %v\n", deviceID)
-			return
-		}
-		if img.Empty() {
-			fmt.Printf("no image on device %v\n", deviceID)
-			return
-		}
-		fileName := "test.jpg"
-		gocv.IMWrite(fileName, img)
-		take <- img
+			if ok := webcam.Read(&img); !ok {
+				fmt.Printf("cannot read device %v\n", deviceID)
+				return
+			}
+			if img.Empty() {
+				fmt.Printf("no image on device %v\n", deviceID)
+				return
+			}
+			img2, _ := gocv.IMEncode(".jpg", img)
+			take <- img2.GetBytes()
+			img2.Close()
+			//ModePerm 預設權限
+			os.WriteFile("test", img2.GetBytes(), os.ModePerm)
+		}()
 	}
 }

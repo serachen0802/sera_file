@@ -19,8 +19,6 @@
             // }
 
             sock.onmessage = function(e) {
-                console.log("message received: " + e);
-                console.log(e.data);
                 var k = JSON.parse(e.data)
                 console.log(e.data);
                 // document.getElementById("demo").innerHTML=e.data
@@ -40,9 +38,12 @@
             //     const result= response.json()
             //     console.log(result)
             .then(res => {
-                // return res.json();   // 使用 text() 可以得到純文字 String
+                console.log(res)
+                return res.json();   // 使用 text() 可以得到純文字 String
             }).then(result => {
                 console.log(result);
+                document.getElementById("img").src ='data:image/jpeg;base64,'+result;
+
             })
         }
     </script>
