@@ -57,9 +57,12 @@ func takePicture(open chan int, take chan []byte) http.HandlerFunc {
 		fmt.Println("拍照")
 		img := <-take
 
-		jsonImg, _ := json.Marshal(img)
-		rw.Write(jsonImg)
+		jsonImg, err := json.Marshal(img)
+		if err != nil {
+			fmt.Println(err)
+		}
 
+		rw.Write(jsonImg)
 	}
 }
 
@@ -79,32 +82,36 @@ func main() {
 		http.ListenAndServe(":3000", nil) // stuck
 	}()
 
+	// 使用channel的方式傳送開啟相機資訊
 	for {
 		func() {
 			deviceID := <-open
+			// 啟動相機
 			webcam, err := gocv.OpenVideoCapture(deviceID)
 			if err != nil {
 				fmt.Println(err)
 			}
-
 			defer webcam.Close()
+
 			img := gocv.NewMat()
 			defer img.Close()
-
-			// webcam.Read(&img)
 
 			if ok := webcam.Read(&img); !ok {
 				fmt.Printf("cannot read device %v\n", deviceID)
 				return
 			}
+
 			if img.Empty() {
 				fmt.Printf("no image on device %v\n", deviceID)
 				return
 			}
+
+			// 將原圖取得圖片byte做傳輸
 			img2, _ := gocv.IMEncode(".jpg", img)
+			// 將圖片用channel 傳回
 			take <- img2.GetBytes()
 			img2.Close()
-			//ModePerm 預設權限
+			// 除吋檔案(ModePerm 預設權限)
 			os.WriteFile("test", img2.GetBytes(), os.ModePerm)
 		}()
 	}
