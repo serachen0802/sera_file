@@ -6,7 +6,8 @@
     <h1>Plants</h1>
     <script type="text/javascript">
         var sock = null;
-        var wsuri = "ws://127.0.0.1:3000/ws";
+        var wsuri = `${window.location.origin.replace('http', 'ws')}/ws`
+        // var wsuri = "ws://127.0.0.1:3000/ws";
         window.onload = function() {
 
             sock = new WebSocket(wsuri);
@@ -31,19 +32,30 @@
             sock.send(msg);
         };
 
+        var imgCode
         function takePicture(){
             console.log('拍照')
-            fetch('http://127.0.0.1:3000/takePicture')
-            // .then(function(response) {
-            //     const result= response.json()
-            //     console.log(result)
+            fetch( `${window.location.origin.replace('http', 'http')}/takePicture`)
             .then(res => {
                 console.log(res)
+                imgCode=res
                 return res.json();   // 使用 text() 可以得到純文字 String
             }).then(result => {
                 console.log(result);
                 document.getElementById("img").src ='data:image/jpeg;base64,'+result;
 
+            })
+        }
+
+
+        function save(){
+            fetch( `${window.location.origin.replace('http', 'http')}/save?img=`+imgCode,{
+            })
+            .then(res => {
+                console.log(res)
+                return res.json();   // 使用 text() 可以得到純文字 String
+            }).then(result => {
+                console.log(result.status);
             })
         }
     </script>
@@ -55,8 +67,10 @@
 
 </form>
 <button onclick="send();">Send Message</button>
-<button onclick="takePicture();">拍照</button><br>
+<button onclick="takePicture();">拍照</button>
+<button onclick="save();">儲存</button><br>
 
-<img id="img">
+
+<img id="img" style="width: 100px; height: 100px; border: none;">
 </body>
 </html>

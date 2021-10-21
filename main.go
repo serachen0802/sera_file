@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"gocv.io/x/gocv"
@@ -66,13 +67,24 @@ func takePicture(open chan int, take chan []byte) http.HandlerFunc {
 	}
 }
 
+func savePicture(w http.ResponseWriter, r *http.Request) {
+	img := r.URL.Query().Get("img") // get URL param with key "name"
+	fmt.Println(img)
+	FileName := fmt.Sprint("picture/test", time.Now().Unix(), ".jpg")
+	os.WriteFile(FileName, img99, os.ModePerm)
+	return
+}
+
 type IndexData struct {
 	Title string
 }
 
+var img99 []byte
+
 func main() {
 	http.Handle("/", http.FileServer(http.Dir(".")))
 	http.HandleFunc("/ws", wsHandler)
+	http.HandleFunc("/save", savePicture)
 
 	open := make(chan int)
 	take := make(chan []byte)
@@ -110,9 +122,9 @@ func main() {
 			img2, _ := gocv.IMEncode(".jpg", img)
 			// 將圖片用channel 傳回
 			take <- img2.GetBytes()
+			img99 = img2.GetBytes()
 			img2.Close()
 			// 除吋檔案(ModePerm 預設權限)
-			os.WriteFile("test", img2.GetBytes(), os.ModePerm)
 		}()
 	}
 }
