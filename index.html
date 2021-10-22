@@ -47,7 +47,7 @@
         }
 
         function save(){
-            fetch( `${window.location.origin.replace('http', 'http')}/save?img=`+imgCode,{
+            fetch( `${window.location.origin.replace('http', 'http')}/save`,{
             })
             .then(res => {
                 console.log(res)

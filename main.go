@@ -69,10 +69,19 @@ func takePicture(open chan int, take chan []byte) http.HandlerFunc {
 }
 
 func savePicture(w http.ResponseWriter, r *http.Request) {
-	img := r.URL.Query().Get("img") // get URL param with key "name"
-	fmt.Println(img)
 	FileName := fmt.Sprint("picture/test", time.Now().Unix(), ".jpg")
+	_, err := os.Stat("picture")
+	if err != nil {
+		os.Mkdir("picture", os.ModePerm)
+	}
 	os.WriteFile(FileName, img99, os.ModePerm)
+	if err != nil {
+		fmt.Println(err)
+	}
+	// if err == "no such file or directory" {
+	// 	fmt.Println("沒有資料夾")
+	// }
+
 	return
 }
 
@@ -120,6 +129,8 @@ func main() {
 				fmt.Println(err)
 			}
 			defer webcam.Close()
+
+			time.Sleep(time.Millisecond * 100)
 
 			img := gocv.NewMat()
 			defer img.Close()
