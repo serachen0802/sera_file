@@ -37,19 +37,30 @@
             console.log('拍照')
             fetch( `${window.location.origin.replace('http', 'http')}/takePicture`)
             .then(res => {
-                console.log(res)
-                imgCode=res
                 return res.json();   // 使用 text() 可以得到純文字 String
             }).then(result => {
                 console.log(result);
+                imgCode=result
                 document.getElementById("img").src ='data:image/jpeg;base64,'+result;
 
             })
         }
 
-
         function save(){
             fetch( `${window.location.origin.replace('http', 'http')}/save?img=`+imgCode,{
+            })
+            .then(res => {
+                console.log(res)
+                return res.json();   // 使用 text() 可以得到純文字 String
+            }).then(result => {
+                console.log(result.status);
+            })
+        }
+
+        function saveByFront(){
+            fetch( `${window.location.origin.replace('http', 'http')}/saveByFront`,{
+                body:imgCode,
+                method:"POST"
             })
             .then(res => {
                 console.log(res)
@@ -68,7 +79,9 @@
 </form>
 <button onclick="send();">Send Message</button>
 <button onclick="takePicture();">拍照</button>
-<button onclick="save();">儲存</button><br>
+<button onclick="save();">儲存</button>
+<button onclick="saveByFront();">儲存by前端</button><br>
+
 
 
 <img id="img" style="width: 100px; height: 100px; border: none;">

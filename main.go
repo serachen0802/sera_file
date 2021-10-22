@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -75,6 +76,20 @@ func savePicture(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func saveByFront(w http.ResponseWriter, r *http.Request) {
+	stringTypePhoto, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+	saveImg, err := base64.StdEncoding.DecodeString(string(stringTypePhoto))
+	if err != nil {
+		fmt.Println(err)
+	}
+	FileName := fmt.Sprint("picture/test", time.Now().Unix(), ".jpg")
+	os.WriteFile(FileName, saveImg, os.ModePerm)
+
+}
+
 type IndexData struct {
 	Title string
 }
@@ -85,6 +100,7 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir(".")))
 	http.HandleFunc("/ws", wsHandler)
 	http.HandleFunc("/save", savePicture)
+	http.HandleFunc("/saveByFront", saveByFront)
 
 	open := make(chan int)
 	take := make(chan []byte)
