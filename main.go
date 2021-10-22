@@ -70,19 +70,17 @@ func takePicture(open chan int, take chan []byte) http.HandlerFunc {
 
 func savePicture(w http.ResponseWriter, r *http.Request) {
 	FileName := fmt.Sprint("picture/test", time.Now().Unix(), ".jpg")
-	_, err := os.Stat("picture")
-	if err != nil {
-		os.Mkdir("picture", os.ModePerm)
-	}
-	os.WriteFile(FileName, img99, os.ModePerm)
-	if err != nil {
-		fmt.Println(err)
-	}
-	// if err == "no such file or directory" {
-	// 	fmt.Println("沒有資料夾")
+	// _, err := os.Stat("picture")
+	// if err != nil {
+	// 	os.Mkdir("picture", os.ModePerm)
 	// }
-
-	return
+	err := os.WriteFile(FileName, img99, os.ModePerm)
+	if err != nil {
+		if os.IsNotExist(err) == true {
+			os.Mkdir("picture", os.ModePerm)
+		}
+		os.WriteFile(FileName, img99, os.ModePerm)
+	}
 }
 
 func saveByFront(w http.ResponseWriter, r *http.Request) {
