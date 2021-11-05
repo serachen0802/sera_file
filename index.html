@@ -47,7 +47,11 @@
         }
 
         function save(){
+            var fileName = prompt("檔案名稱","")
+            console.log(fileName)
             fetch( `${window.location.origin.replace('http', 'http')}/save`,{
+                body:fileName,
+                method:"POST"
             })
             .then(res => {
                 console.log(res)
@@ -66,7 +70,22 @@
                 console.log(res)
                 return res.json();   // 使用 text() 可以得到純文字 String
             }).then(result => {
-                console.log(result.status);
+                console.log(result);
+            })
+        }
+
+        function search(){
+            var fileName=document.getElementById('searchName').value;
+            fetch( `${window.location.origin.replace('http', 'http')}/search`,{
+                body:fileName,
+                method:"POST"
+            })
+            .then(res => {
+                console.log(res)
+                return res.json();   // 使用 text() 可以得到純文字 String
+            }).then(result => {
+                console.log(result);
+                document.getElementById("img").src ='data:image/jpeg;base64,'+result;
             })
         }
     </script>
@@ -78,6 +97,10 @@
 
 </form>
 <button onclick="send();">Send Message</button>
+<p>
+    檔案名稱: <input id="searchName" type="text" value="">
+</p>
+<button onclick="search();">查詢檔案</button>
 <button onclick="takePicture();">拍照</button>
 <button onclick="save();">儲存</button>
 <button onclick="saveByFront();">儲存by前端</button><br>

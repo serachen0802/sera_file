@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/gorilla/websocket"
 	"gocv.io/x/gocv"
@@ -30,7 +33,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			return
 		}
-		fmt.Printf(string(p))
+		// fmt.Printf(string(p))
 
 		image, err := ioutil.ReadFile("./plants.jpeg")
 		if err != nil {
@@ -69,18 +72,30 @@ func takePicture(open chan int, take chan []byte) http.HandlerFunc {
 }
 
 func savePicture(w http.ResponseWriter, r *http.Request) {
-	FileName := fmt.Sprint("picture/test", time.Now().Unix(), ".jpg")
-	// _, err := os.Stat("picture")
-	// if err != nil {
-	// 	os.Mkdir("picture", os.ModePerm)
-	// }
-	err := os.WriteFile(FileName, img99, os.ModePerm)
+	FileName, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		if os.IsNotExist(err) == true {
-			os.Mkdir("picture", os.ModePerm)
-		}
-		os.WriteFile(FileName, img99, os.ModePerm)
+		fmt.Println(err)
 	}
+	// FileName := fmt.Sprint("picture/test", time.Now().Unix(), ".jpg")
+	// err := os.WriteFile(FileName, img99, os.ModePerm)
+	// if err != nil {
+	// 	if os.IsNotExist(err) == true {
+	// 		os.Mkdir("picture", os.ModePerm)
+	// 	}
+	// 	os.WriteFile(FileName, img99, os.ModePerm)
+	// }
+	// 儲存檔案(ModePerm 預設權限)
+
+	DB, err := sql.Open("mysql", "root:qwe123@tcp(127.0.0.1:3306)/sera?charset=utf8")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	_, err = DB.Exec("Insert INTO picture(name,picture) values(?,?)", FileName, img99)
+	if err != nil {
+		fmt.Println(err)
+	}
+	DB.Close()
 }
 
 func saveByFront(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +109,34 @@ func saveByFront(w http.ResponseWriter, r *http.Request) {
 	}
 	FileName := fmt.Sprint("picture/test", time.Now().Unix(), ".jpg")
 	os.WriteFile(FileName, saveImg, os.ModePerm)
+}
 
+func search(w http.ResponseWriter, r *http.Request) {
+	fileName, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(string(fileName))
+
+	DB, err := sql.Open("mysql", "root:qwe123@tcp(127.0.0.1:3306)/sera?charset=utf8")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	var picture []byte
+	data := DB.QueryRow("SELECT picture FROM picture WHERE name =?", fileName)
+	err = data.Scan(&picture)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(picture)
+	jsonImg, err := json.Marshal(picture)
+	if err != nil {
+		fmt.Println(err)
+	}
+	DB.Close()
+
+	w.Write(jsonImg)
 }
 
 type IndexData struct {
@@ -108,9 +150,33 @@ func main() {
 	http.HandleFunc("/ws", wsHandler)
 	http.HandleFunc("/save", savePicture)
 	http.HandleFunc("/saveByFront", saveByFront)
+	http.HandleFunc("/search", search)
 
 	open := make(chan int)
 	take := make(chan []byte)
+
+	DB, err := sql.Open("mysql", "root:qwe123@tcp(127.0.0.1:3306)/sera?charset=utf8")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	_, tableCheck := DB.Query("select * from picture;")
+	if tableCheck == nil {
+		fmt.Println("table is there")
+	} else {
+		fmt.Println("table not there")
+		sql := `CREATE TABLE picture (
+			id int(100) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+			name varchar(20) NOT NULL,
+			picture longblob NOT NULL,
+			created_time datetime DEFAULT CURRENT_TIMESTAMP
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+		_, err = DB.Exec(sql)
+		if err != nil {
+			fmt.Println(err)
+		}
+		DB.Close()
+	}
 
 	go func() {
 		http.HandleFunc("/takePicture", takePicture(open, take))
@@ -149,7 +215,7 @@ func main() {
 			take <- img2.GetBytes()
 			img99 = img2.GetBytes()
 			img2.Close()
-			// 除吋檔案(ModePerm 預設權限)
 		}()
 	}
+
 }
